@@ -1,0 +1,1 @@
+deepspeed --num_nodes 2 --hostfile hostfile.txt --master_addr="169.254.8.31" server.py --deepspeed --chat
