@@ -1,1 +1,2 @@
-deepspeed --num_nodes 2 --hostfile hostfile.txt --master_addr="169.254.8.31" server.py --deepspeed --chat
+#deepspeed --num_nodes 2 --hostfile hostfile.txt --master_addr="169.254.8.31" server.py --deepspeed --model facebook_galactica-30b
+deepspeed --num_nodes 2 --hostfile hostfile.txt --master_addr="169.254.8.31" server.py --deepspeed --model CodeLlama-13b-Python-safetensors --gpu-memory 8 8 8 8
