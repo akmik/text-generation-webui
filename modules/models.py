@@ -82,6 +82,8 @@ def load_model(model_name, loader=None):
                 raise ValueError
 
     shared.args.loader = loader
+    logger.info(f"AK Loading {model_name} with {loader} ...")
+
     output = load_func_map[loader](model_name)
     if type(output) is tuple:
         model, tokenizer = output
@@ -90,6 +92,7 @@ def load_model(model_name, loader=None):
         if model is None:
             return None, None
         else:
+            logger.info(f"AK Loading tokenizer: model_name={model_name} mode={model}")
             tokenizer = load_tokenizer(model_name, model)
 
     # Hijack attention with xformers
@@ -105,7 +108,7 @@ def load_model(model_name, loader=None):
     logger.info(f"LOADER: {loader}")
     logger.info(f"TRUNCATION LENGTH: {shared.settings['truncation_length']}")
     logger.info(f"INSTRUCTION TEMPLATE: {shared.settings['instruction_template']}")
-    logger.info(f"Loaded the model in {(time.time()-t0):.2f} seconds.")
+    logger.info(f"AK Loaded the model in {(time.time()-t0):.2f} seconds.")
     return model, tokenizer
 
 
@@ -165,8 +168,12 @@ def huggingface_loader(model_name):
 
     # DeepSpeed ZeRO-3
     elif shared.args.deepspeed:
+        logger.info(f"AK loading model ./'{path_to_model}' with DeepSpeed, torch_dtype={params['torch_dtype']}. Customize it here!!!")
         model = LoaderClass.from_pretrained(path_to_model, torch_dtype=params['torch_dtype'])
+        logger.info(f"AK loaded model from pretrained {model}")
+        logger.info(f"AK DeepSpeed init params: config_params={ds_config}, model_parameters=None, optimizer=None, lr_scheduler=None")
         model = deepspeed.initialize(model=model, config_params=ds_config, model_parameters=None, optimizer=None, lr_scheduler=None)[0]
+        logger.info(f"AK DeepSpeed initialized. Starting inference")
         model.module.eval()  # Inference
         logger.info(f'DeepSpeed ZeRO-3 is enabled: {is_deepspeed_zero3_enabled()}')
 
@@ -182,7 +189,9 @@ def huggingface_loader(model_name):
             params['torch_dtype'] = torch.float32
         else:
             params['device_map'] = 'auto'
-            params['max_memory'] = get_max_memory_dict()
+            max_mem_dict = get_max_memory_dict()
+            logger.info(f"AK max memory dict: {max_mem_dict}")
+            params['max_memory'] = max_mem_dict
             if shared.args.load_in_4bit:
                 # See https://github.com/huggingface/transformers/pull/23479/files
                 # and https://huggingface.co/blog/4bit-transformers-bitsandbytes
@@ -232,6 +241,7 @@ def huggingface_loader(model_name):
         elif shared.args.alpha_value > 1:
             params['rope_scaling'] = {'type': 'dynamic', 'factor': RoPE.get_alpha_value(shared.args.alpha_value, shared.args.rope_freq_base)}
 
+        logger.info(f"AK Loading model from {path_to_model} with params: {params}")
         model = LoaderClass.from_pretrained(path_to_model, **params)
 
     return model

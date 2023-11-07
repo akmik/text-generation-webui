@@ -28,12 +28,15 @@ def create_ui():
 
     # Finding the default values for the GPU and CPU memories
     total_mem = []
+    gpu_names = []
     if is_torch_xpu_available():
         for i in range(torch.xpu.device_count()):
             total_mem.append(math.floor(torch.xpu.get_device_properties(i).total_memory / (1024 * 1024)))
+            gpu_names.append(torch.xpu.get_device_properties(i).name)
     else:
         for i in range(torch.cuda.device_count()):
             total_mem.append(math.floor(torch.cuda.get_device_properties(i).total_memory / (1024 * 1024)))
+            gpu_names.append(torch.cuda.get_device_properties(i).name)
 
     default_gpu_mem = []
     if shared.args.gpu_memory is not None and len(shared.args.gpu_memory) > 0:
@@ -47,7 +50,7 @@ def create_ui():
         default_gpu_mem.append(0)
 
     total_cpu_mem = math.floor(psutil.virtual_memory().total / (1024 * 1024))
-    if shared.args.cpu_memory is not None:
+    if shared.args.cpu_memory is not None and shared.args.cpu_memory > 0:
         default_cpu_mem = re.sub('[a-zA-Z ]', '', shared.args.cpu_memory)
     else:
         default_cpu_mem = 0
@@ -78,7 +81,7 @@ def create_ui():
                     with gr.Row():
                         with gr.Column():
                             for i in range(len(total_mem)):
-                                shared.gradio[f'gpu_memory_{i}'] = gr.Slider(label=f"gpu-memory in MiB for device :{i}", maximum=total_mem[i], value=default_gpu_mem[i])
+                                shared.gradio[f'gpu_memory_{i}'] = gr.Slider(label=f"{gpu_names[i]} in MiB for device :{i}", maximum=total_mem[i], value=default_gpu_mem[i])
 
                             shared.gradio['cpu_memory'] = gr.Slider(label="cpu-memory in MiB", maximum=total_cpu_mem, value=default_cpu_mem)
                             shared.gradio['transformers_info'] = gr.Markdown('load-in-4bit params:')
