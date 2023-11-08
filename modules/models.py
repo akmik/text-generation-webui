@@ -170,10 +170,15 @@ def huggingface_loader(model_name):
     elif shared.args.deepspeed:
         logger.info(f"AK loading model ./'{path_to_model}' with DeepSpeed, torch_dtype={params['torch_dtype']}. Customize it here!!!")
         model = LoaderClass.from_pretrained(path_to_model, torch_dtype=params['torch_dtype'])
-        logger.info(f"AK loaded model from pretrained {model}")
+        logger.info(f"AK from pretrained loaded model: {model}")
         logger.info(f"AK DeepSpeed init params: config_params={ds_config}, model_parameters=None, optimizer=None, lr_scheduler=None")
-        model = deepspeed.initialize(model=model, config_params=ds_config, model_parameters=None, optimizer=None, lr_scheduler=None)[0]
-        logger.info(f"AK DeepSpeed initialized. Starting inference")
+
+        model = deepspeed.initialize(model=model,
+                                     config_params=ds_config,
+                                     model_parameters=None,
+                                     optimizer=None,
+                                     lr_scheduler=None)[0]
+        logger.info(f"AK DeepSpeed initialized. Starting inference. Model: {model}")
         model.module.eval()  # Inference
         logger.info(f'DeepSpeed ZeRO-3 is enabled: {is_deepspeed_zero3_enabled()}')
 
