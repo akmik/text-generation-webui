@@ -156,6 +156,7 @@ def huggingface_loader(model_name):
 
     # Load the model in simple 16-bit mode by default
     if not any([shared.args.cpu, shared.args.load_in_8bit, shared.args.load_in_4bit, shared.args.auto_devices, shared.args.disk, shared.args.deepspeed, shared.args.gpu_memory is not None, shared.args.cpu_memory is not None, shared.args.compress_pos_emb > 1, shared.args.alpha_value > 1, shared.args.disable_exllama]):
+        logger.info(f"AK model LoaderClass={LoaderClass}")
         model = LoaderClass.from_pretrained(path_to_model, **params)
         if torch.backends.mps.is_available():
             device = torch.device('mps')
@@ -246,7 +247,7 @@ def huggingface_loader(model_name):
         elif shared.args.alpha_value > 1:
             params['rope_scaling'] = {'type': 'dynamic', 'factor': RoPE.get_alpha_value(shared.args.alpha_value, shared.args.rope_freq_base)}
 
-        logger.info(f"AK Loading model from {path_to_model} with params: {params}")
+        logger.info(f"AK Loading model from {path_to_model} with params: {params} by {LoaderClass}")
         model = LoaderClass.from_pretrained(path_to_model, **params)
 
     return model
@@ -405,13 +406,18 @@ def RWKV_loader(model_name):
 
 def get_max_memory_dict():
     max_memory = {}
-    max_cpu_memory = shared.args.cpu_memory.strip() if shared.args.cpu_memory is not None else '99GiB'
     if shared.args.gpu_memory:
         memory_map = list(map(lambda x: x.strip(), shared.args.gpu_memory))
         for i in range(len(memory_map)):
-            max_memory[i] = f'{memory_map[i]}GiB' if not re.match('.*ib$', memory_map[i].lower()) else memory_map[i]
+            logger.info(f"AK memory got {i}:{memory_map[i]}")
+            if memory_map[i][0] != "0":
+                max_memory[i] = f'{memory_map[i]}GiB' if not re.match('.*ib$', memory_map[i].lower()) else memory_map[i]
 
-        max_memory['cpu'] = f'{max_cpu_memory}GiB' if not re.match('.*ib$', max_cpu_memory.lower()) else max_cpu_memory
+        if shared.args.cpu_memory:
+            max_cpu_memory = shared.args.cpu_memory.strip() # '99GiB'
+            max_memory['cpu'] = f'{max_cpu_memory}GiB' if not re.match('.*ib$', max_cpu_memory.lower()) else max_cpu_memory
+        else:
+            logger.info("AK CPU memory excluded")
 
     # If --auto-devices is provided standalone, try to get a reasonable value
     # for the maximum memory of device :0
@@ -427,6 +433,7 @@ def get_max_memory_dict():
 
         suggestion = int(round(suggestion / 1000))
         logger.warning(f"Auto-assiging --gpu-memory {suggestion} for your GPU to try to prevent out-of-memory errors. You can manually set other values.")
+        max_cpu_memory = shared.args.cpu_memory.strip() if shared.args.cpu_memory is not None else '99GiB'
         max_memory[0] = f'{suggestion}GiB'
         max_memory['cpu'] = f'{max_cpu_memory}GiB' if not re.match('.*ib$', max_cpu_memory.lower()) else max_cpu_memory
 
