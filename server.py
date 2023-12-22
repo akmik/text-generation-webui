@@ -146,11 +146,13 @@ def create_interface():
 
     # Launch the interface
     shared.gradio['interface'].queue(concurrency_count=64)
+    server_name = None if not shared.args.listen else (shared.args.listen_host or '0.0.0.0')
+    logger.info(f"AK server_name={server_name}")
     with OpenMonkeyPatch():
         shared.gradio['interface'].launch(
             prevent_thread_lock=True,
             share=shared.args.share,
-            server_name=None if not shared.args.listen else (shared.args.listen_host or '0.0.0.0'),
+            server_name=server_name,
             server_port=shared.args.listen_port,
             inbrowser=shared.args.auto_launch,
             auth=auth or None,
