@@ -25,6 +25,7 @@ loaders_and_params = OrderedDict({
         'rope_freq_base',
         'compress_pos_emb',
         'disable_exllama',
+        'disable_exllamav2',
         'transformers_info'
     ],
     'llama.cpp': [
@@ -42,6 +43,8 @@ loaders_and_params = OrderedDict({
         'compress_pos_emb',
         'cpu',
         'numa',
+        'no_offload_kqv',
+        'tensorcores',
     ],
     'llamacpp_HF': [
         'n_ctx',
@@ -59,29 +62,34 @@ loaders_and_params = OrderedDict({
         'cpu',
         'numa',
         'cfg_cache',
+        'trust_remote_code',
         'no_use_fast',
         'logits_all',
+        'no_offload_kqv',
+        'tensorcores',
         'llamacpp_HF_info',
-    ],
-    'ExLlama_HF': [
-        'gpu_split',
-        'max_seq_len',
-        'alpha_value',
-        'rope_freq_base',
-        'compress_pos_emb',
-        'cfg_cache',
-        'no_use_fast',
-        'exllama_HF_info',
     ],
     'ExLlamav2_HF': [
         'gpu_split',
         'max_seq_len',
         'cfg_cache',
         'no_flash_attn',
+        'num_experts_per_token',
         'cache_8bit',
         'alpha_value',
         'compress_pos_emb',
+        'trust_remote_code',
         'no_use_fast',
+    ],
+    'ExLlamav2': [
+        'gpu_split',
+        'max_seq_len',
+        'no_flash_attn',
+        'num_experts_per_token',
+        'cache_8bit',
+        'alpha_value',
+        'compress_pos_emb',
+        'exllamav2_info',
     ],
     'AutoGPTQ': [
         'triton',
@@ -92,6 +100,7 @@ loaders_and_params = OrderedDict({
         'groupsize',
         'desc_act',
         'disable_exllama',
+        'disable_exllamav2',
         'gpu_memory',
         'cpu_memory',
         'cpu',
@@ -115,24 +124,9 @@ loaders_and_params = OrderedDict({
         'groupsize',
         'model_type',
         'pre_layer',
+        'trust_remote_code',
         'no_use_fast',
         'gptq_for_llama_info',
-    ],
-    'ExLlama': [
-        'gpu_split',
-        'max_seq_len',
-        'alpha_value',
-        'rope_freq_base',
-        'compress_pos_emb',
-        'exllama_info',
-    ],
-    'ExLlamav2': [
-        'gpu_split',
-        'max_seq_len',
-        'no_flash_attn',
-        'cache_8bit',
-        'alpha_value',
-        'compress_pos_emb',
     ],
     'ctransformers': [
         'n_ctx',
@@ -143,12 +137,28 @@ loaders_and_params = OrderedDict({
         'no_mmap',
         'mlock'
     ],
+    'QuIP#': [
+        'trust_remote_code',
+        'no_use_fast',
+        'no_flash_attn',
+        'quipsharp_info',
+    ],
+    'HQQ': [
+        'hqq_backend',
+        'trust_remote_code',
+        'no_use_fast',
+    ]
 })
 
-loaders_samplers = {
-    'Transformers': {
+
+def transformers_samplers():
+    return {
         'temperature',
         'temperature_last',
+        'dynamic_temperature',
+        'dynatemp_low',
+        'dynatemp_high',
+        'dynatemp_exponent',
         'top_p',
         'min_p',
         'top_k',
@@ -182,55 +192,16 @@ loaders_samplers = {
         'add_bos_token',
         'skip_special_tokens',
         'auto_max_new_tokens',
-    },
-    'ExLlama_HF': {
-        'temperature',
-        'temperature_last',
-        'top_p',
-        'min_p',
-        'top_k',
-        'typical_p',
-        'epsilon_cutoff',
-        'eta_cutoff',
-        'tfs',
-        'top_a',
-        'repetition_penalty',
-        'presence_penalty',
-        'frequency_penalty',
-        'repetition_penalty_range',
-        'encoder_repetition_penalty',
-        'no_repeat_ngram_size',
-        'min_length',
-        'seed',
-        'do_sample',
-        'mirostat_mode',
-        'mirostat_tau',
-        'mirostat_eta',
-        'grammar_file_row',
-        'grammar_string',
-        'guidance_scale',
-        'negative_prompt',
-        'ban_eos_token',
-        'custom_token_bans',
-        'add_bos_token',
-        'skip_special_tokens',
-        'auto_max_new_tokens',
-    },
-    'ExLlama': {
-        'temperature',
-        'top_p',
-        'top_k',
-        'typical_p',
-        'repetition_penalty',
-        'repetition_penalty_range',
-        'seed',
-        'guidance_scale',
-        'negative_prompt',
-        'ban_eos_token',
-        'add_bos_token',
-        'custom_token_bans',
-        'auto_max_new_tokens',
-    },
+    }
+
+
+loaders_samplers = {
+    'Transformers': transformers_samplers(),
+    'AutoGPTQ': transformers_samplers(),
+    'GPTQ-for-LLaMa': transformers_samplers(),
+    'AutoAWQ': transformers_samplers(),
+    'QuIP#': transformers_samplers(),
+    'HQQ': transformers_samplers(),
     'ExLlamav2': {
         'temperature',
         'top_p',
@@ -253,6 +224,10 @@ loaders_samplers = {
     'ExLlamav2_HF': {
         'temperature',
         'temperature_last',
+        'dynamic_temperature',
+        'dynatemp_low',
+        'dynatemp_high',
+        'dynatemp_exponent',
         'top_p',
         'min_p',
         'top_k',
@@ -270,80 +245,6 @@ loaders_samplers = {
         'min_length',
         'seed',
         'do_sample',
-        'mirostat_mode',
-        'mirostat_tau',
-        'mirostat_eta',
-        'grammar_file_row',
-        'grammar_string',
-        'guidance_scale',
-        'negative_prompt',
-        'ban_eos_token',
-        'custom_token_bans',
-        'add_bos_token',
-        'skip_special_tokens',
-        'auto_max_new_tokens',
-    },
-    'AutoGPTQ': {
-        'temperature',
-        'temperature_last',
-        'top_p',
-        'min_p',
-        'top_k',
-        'typical_p',
-        'epsilon_cutoff',
-        'eta_cutoff',
-        'tfs',
-        'top_a',
-        'repetition_penalty',
-        'presence_penalty',
-        'frequency_penalty',
-        'repetition_penalty_range',
-        'encoder_repetition_penalty',
-        'no_repeat_ngram_size',
-        'min_length',
-        'seed',
-        'do_sample',
-        'penalty_alpha',
-        'num_beams',
-        'length_penalty',
-        'early_stopping',
-        'mirostat_mode',
-        'mirostat_tau',
-        'mirostat_eta',
-        'grammar_file_row',
-        'grammar_string',
-        'guidance_scale',
-        'negative_prompt',
-        'ban_eos_token',
-        'custom_token_bans',
-        'add_bos_token',
-        'skip_special_tokens',
-        'auto_max_new_tokens',
-    },
-    'GPTQ-for-LLaMa': {
-        'temperature',
-        'temperature_last',
-        'top_p',
-        'min_p',
-        'top_k',
-        'typical_p',
-        'epsilon_cutoff',
-        'eta_cutoff',
-        'tfs',
-        'top_a',
-        'repetition_penalty',
-        'presence_penalty',
-        'frequency_penalty',
-        'repetition_penalty_range',
-        'encoder_repetition_penalty',
-        'no_repeat_ngram_size',
-        'min_length',
-        'seed',
-        'do_sample',
-        'penalty_alpha',
-        'num_beams',
-        'length_penalty',
-        'early_stopping',
         'mirostat_mode',
         'mirostat_tau',
         'mirostat_eta',
@@ -379,6 +280,10 @@ loaders_samplers = {
     'llamacpp_HF': {
         'temperature',
         'temperature_last',
+        'dynamic_temperature',
+        'dynatemp_low',
+        'dynatemp_high',
+        'dynatemp_exponent',
         'top_p',
         'min_p',
         'top_k',
@@ -416,43 +321,6 @@ loaders_samplers = {
         'repetition_penalty',
         'repetition_penalty_range',
     },
-    'AutoAWQ': {
-        'temperature',
-        'temperature_last',
-        'top_p',
-        'min_p',
-        'top_k',
-        'typical_p',
-        'epsilon_cutoff',
-        'eta_cutoff',
-        'tfs',
-        'top_a',
-        'repetition_penalty',
-        'presence_penalty',
-        'frequency_penalty',
-        'repetition_penalty_range',
-        'encoder_repetition_penalty',
-        'no_repeat_ngram_size',
-        'min_length',
-        'seed',
-        'do_sample',
-        'penalty_alpha',
-        'num_beams',
-        'length_penalty',
-        'early_stopping',
-        'mirostat_mode',
-        'mirostat_tau',
-        'mirostat_eta',
-        'grammar_file_row',
-        'grammar_string',
-        'guidance_scale',
-        'negative_prompt',
-        'ban_eos_token',
-        'custom_token_bans',
-        'add_bos_token',
-        'skip_special_tokens',
-        'auto_max_new_tokens',
-    },
 }
 
 loaders_model_types = {
@@ -488,12 +356,20 @@ def list_all_samplers():
     return sorted(all_samplers)
 
 
-def blacklist_samplers(loader):
+def blacklist_samplers(loader, dynamic_temperature):
     all_samplers = list_all_samplers()
-    if loader == 'All':
-        return [gr.update(visible=True) for sampler in all_samplers]
-    else:
-        return [gr.update(visible=True) if sampler in loaders_samplers[loader] else gr.update(visible=False) for sampler in all_samplers]
+    output = []
+
+    for sampler in all_samplers:
+        if loader == 'All' or sampler in loaders_samplers[loader]:
+            if sampler.startswith('dynatemp'):
+                output.append(gr.update(visible=dynamic_temperature))
+            else:
+                output.append(gr.update(visible=True))
+        else:
+            output.append(gr.update(visible=False))
+
+    return output
 
 
 def get_model_types(loader):

@@ -21,7 +21,7 @@ These were obtained after a blind contest called "Preset Arena" where hundreds o
 
 A key takeaway is that the best presets are:
 
-* **For Instruct**: Divine Intellect, Big O, simple-1, Space Alien, StarChat, Titanic, tfs-with-top-a, Asterism, Contrastive Search (only works for the Transformers loader at the moment).
+* **For Instruct**: Divine Intellect, Big O, simple-1.
 * **For Chat**: Midnight Enigma, Yara, Shortwave.
 
 The other presets are:
@@ -54,6 +54,7 @@ For more information about the parameters, the [transformers documentation](http
 * **mirostat_mode**: Activates the Mirostat sampling technique. It aims to control perplexity during sampling. See the [paper](https://arxiv.org/abs/2007.14966).
 * **mirostat_tau**: No idea, see the paper for details. According to the Preset Arena, 8 is a good value. 
 * **mirostat_eta**: No idea, see the paper for details. According to the Preset Arena, 0.1 is a good value.
+* **dynamic_temperature**: Activates Dynamic Temperature. This modifies temperature to range between "dynatemp_low" (minimum) and "dynatemp_high" (maximum), with an entropy-based scaling. The steepness of the curve is controlled by "dynatemp_exponent".
 * **temperature_last**: Makes temperature the last sampler instead of the first. With this, you can remove low probability tokens with a sampler like min_p and then use a high temperature to make the model creative without losing coherency.
 * **do_sample**: When unchecked, sampling is entirely disabled, and greedy decoding is used instead (the most likely token is always picked).
 * **Seed**: Set the Pytorch seed to this number. Note that some loaders do not use Pytorch (notably llama.cpp), and others are not deterministic (notably ExLlama v1 and v2). For these loaders, the seed has no effect.
@@ -101,16 +102,13 @@ So you can use those special placeholders in your character definitions. They ar
 
 Defines the instruction template that is used in the Chat tab when "instruct" or "chat-instruct" are selected under "Mode".
 
-* **Instruction template**: A dropdown menu where you can select from saved templates, save a new template (💾 button), and delete the currently selected template (🗑️).
+* **Saved instruction templates**: A dropdown menu where you can load a saved template, save a new template (💾 button), and delete the currently selected template (🗑️).
 * **Custom system message**: A message that defines the personality of the chatbot, replacing its default "System message" string. Example: "You are a duck."
-* **Turn template**: Defines the positioning of spaces and new line characters in a single turn of the dialogue. `<|user-message|>` gets replaced with the user input, `<|bot-message|>` gets replaced with the bot reply, `<|user|>` gets replaced with the "User string" below, and `<|bot|>` gets replaced with "Bot string" below. The `<|user|>` and `<|bot|>` placeholders must be included even if "User string" and "Bot string" are empty, as they are used to split the template in parts in the backend.
-* **User string**: Replaces `<|user|>` in the turn template.
-* **Bot string**: Replaces `<|bot|>` in the turn template.
-* **Context**: A string that appears as-is at the top of the prompt, including the new line characters at the end (if any). The `<|system-message|>` placeholder gets replaced with the "System message" string below, unless "Custom system message" is not empty, in which case it is used instead.
-* **System message**: A default message recommended by the model creator(s) to define the personality of the chatbot.
+* **Instruction template**: A Jinja2 template that defines the prompt format for the instruction-following conversation.
 * **Send to default**: Send the full instruction template in string format to the Default tab.
 * **Send to notebook**: Send the full instruction template in string format to the Notebook tab.
 * **Send to negative prompt**: Send the full instruction template in string format to the "Negative prompt" field under "Parameters" > "Generation".
+* **Chat template**: A Jinja2 template that defines the prompt format for regular chat conversations with characters.
 * **Command for chat-instruct mode**: The command that is used in chat-instruct mode to query the model to generate a reply on behalf of the character. Can be used creatively to generate specific kinds of responses.
 
 ## Chat history
