@@ -217,6 +217,7 @@ def get_stopping_strings(state):
 
 
 def chatbot_wrapper(text, state, regenerate=False, _continue=False, loading_message=True, for_ui=False):
+    logger.info(f"AK In chatbot_wrapper")
     history = state['history']
     output = copy.deepcopy(history)
     output = apply_extensions('history', output)

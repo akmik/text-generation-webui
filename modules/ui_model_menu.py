@@ -31,12 +31,14 @@ def create_ui():
     gpu_names = []
     if is_torch_xpu_available():
         for i in range(torch.xpu.device_count()):
-            total_mem.append(math.floor(torch.xpu.get_device_properties(i).total_memory / (1024 * 1024)))
-            gpu_names.append(torch.xpu.get_device_properties(i).name)
+            props = torch.xpu.get_device_properties(i)
+            total_mem.append(math.floor(props.total_memory / (1024 * 1024)))
+            gpu_names.append(f"{props.name} {props.major}x{props.minor}")
     else:
         for i in range(torch.cuda.device_count()):
-            total_mem.append(math.floor(torch.cuda.get_device_properties(i).total_memory / (1024 * 1024)))
-            gpu_names.append(torch.cuda.get_device_properties(i).name)
+            props = torch.cuda.get_device_properties(i)
+            total_mem.append(math.floor(props.total_memory / (1024 * 1024)))
+            gpu_names.append(f"{props.name} {props.major}-{props.minor}")
 
     default_gpu_mem = []
     if shared.args.gpu_memory is not None and len(shared.args.gpu_memory) > 0:
