@@ -26,7 +26,7 @@ loaders_and_params = OrderedDict({
         'compress_pos_emb',
         'disable_exllama',
         'disable_exllamav2',
-        'transformers_info'
+        'transformers_info',
     ],
     'llama.cpp': [
         'n_ctx',
@@ -44,6 +44,7 @@ loaders_and_params = OrderedDict({
         'cpu',
         'numa',
         'no_offload_kqv',
+        'row_split',
         'tensorcores',
     ],
     'llamacpp_HF': [
@@ -66,6 +67,7 @@ loaders_and_params = OrderedDict({
         'no_use_fast',
         'logits_all',
         'no_offload_kqv',
+        'row_split',
         'tensorcores',
         'llamacpp_HF_info',
     ],
@@ -159,6 +161,7 @@ def transformers_samplers():
         'dynatemp_low',
         'dynatemp_high',
         'dynatemp_exponent',
+        'smoothing_factor',
         'top_p',
         'min_p',
         'top_k',
@@ -189,9 +192,11 @@ def transformers_samplers():
         'negative_prompt',
         'ban_eos_token',
         'custom_token_bans',
+        'sampler_priority',
         'add_bos_token',
         'skip_special_tokens',
         'auto_max_new_tokens',
+        'prompt_lookup_num_tokens'
     }
 
 
@@ -204,12 +209,16 @@ loaders_samplers = {
     'HQQ': transformers_samplers(),
     'ExLlamav2': {
         'temperature',
+        'temperature_last',
         'top_p',
         'min_p',
         'top_k',
         'typical_p',
         'tfs',
+        'top_a',
         'repetition_penalty',
+        'presence_penalty',
+        'frequency_penalty',
         'repetition_penalty_range',
         'seed',
         'mirostat_mode',
@@ -228,6 +237,7 @@ loaders_samplers = {
         'dynatemp_low',
         'dynatemp_high',
         'dynatemp_exponent',
+        'smoothing_factor',
         'top_p',
         'min_p',
         'top_k',
@@ -254,6 +264,7 @@ loaders_samplers = {
         'negative_prompt',
         'ban_eos_token',
         'custom_token_bans',
+        'sampler_priority',
         'add_bos_token',
         'skip_special_tokens',
         'auto_max_new_tokens',
@@ -284,6 +295,7 @@ loaders_samplers = {
         'dynatemp_low',
         'dynatemp_high',
         'dynatemp_exponent',
+        'smoothing_factor',
         'top_p',
         'min_p',
         'top_k',
@@ -310,6 +322,7 @@ loaders_samplers = {
         'negative_prompt',
         'ban_eos_token',
         'custom_token_bans',
+        'sampler_priority',
         'add_bos_token',
         'skip_special_tokens',
         'auto_max_new_tokens',
