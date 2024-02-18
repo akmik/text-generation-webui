@@ -309,7 +309,8 @@ def chatbot_wrapper(text, state, regenerate=False, _continue=False, loading_mess
 
     # Generate
     reply = None
-    for j, reply in enumerate(generate_reply(prompt, state, stopping_strings=stopping_strings, is_chat=True, for_ui=for_ui)):
+    metrics = {}
+    for j, reply in enumerate(generate_reply(prompt, state, stopping_strings=stopping_strings, is_chat=True, for_ui=for_ui, metrics=metrics)):
 
         # Extract the reply
         visible_reply = reply
@@ -334,7 +335,7 @@ def chatbot_wrapper(text, state, regenerate=False, _continue=False, loading_mess
             if is_stream:
                 yield output
 
-    output['visible'][-1][1] = apply_extensions('output', output['visible'][-1][1], state, is_chat=True)
+    output['visible'][-1][1] = apply_extensions('output', output['visible'][-1][1], state, is_chat=True) + f"<br/> metrics={metrics}"
     yield output
 
 

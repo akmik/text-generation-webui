@@ -35,7 +35,7 @@ def generate_reply(*args, **kwargs):
         shared.generation_lock.release()
 
 
-def _generate_reply(question, state, stopping_strings=None, is_chat=False, escape_html=False, for_ui=False):
+def _generate_reply(question, state, stopping_strings=None, is_chat=False, escape_html=False, for_ui=False, metrics={}):
     logger.info(f"AK _generate_reply question={question},\nstate={state}")
     # Find the appropriate generation function
     generate_func = apply_extensions('custom_generate_reply')
@@ -85,7 +85,7 @@ def _generate_reply(question, state, stopping_strings=None, is_chat=False, escap
         min_update_interval = 1 / state['max_updates_second']
 
     # Generate
-    for reply in generate_func(question, original_question, seed, state, stopping_strings, is_chat=is_chat):
+    for reply in generate_func(question, original_question, seed, state, stopping_strings, is_chat=is_chat, metrics=metrics):
         reply, stop_found = apply_stopping_strings(reply, all_stop_strings)
         if escape_html:
             reply = html.escape(reply)
@@ -186,6 +186,7 @@ def generate_reply_wrapper(question, state, stopping_strings=None):
     yield formatted_outputs(reply, shared.model_name)
 
     for reply in generate_reply(question, state, stopping_strings, is_chat=False, escape_html=True, for_ui=True):
+        logger.info("AK for reply in generate_reply")
         if not shared.is_seq2seq:
             reply = question + reply
 
@@ -284,7 +285,7 @@ def get_reply_from_output_ids(output_ids, state=None, starting_from=0):
     return reply
 
 
-def generate_reply_HF(question, original_question, seed, state, stopping_strings=None, is_chat=False):
+def generate_reply_HF(question, original_question, seed, state, stopping_strings=None, is_chat=False, metrics={}):
     generate_params = {}
     for k in ['max_new_tokens', 'temperature', 'temperature_last', 'dynamic_temperature', 'dynatemp_low', 'dynatemp_high', 'dynatemp_exponent', 'smoothing_factor', 'top_p', 'min_p', 'top_k', 'repetition_penalty', 'presence_penalty', 'frequency_penalty', 'repetition_penalty_range', 'typical_p', 'tfs', 'top_a', 'guidance_scale', 'penalty_alpha', 'mirostat_mode', 'mirostat_tau', 'mirostat_eta', 'do_sample', 'encoder_repetition_penalty', 'no_repeat_ngram_size', 'min_length', 'num_beams', 'length_penalty', 'early_stopping']:
         if k in state:
@@ -414,11 +415,18 @@ def generate_reply_HF(question, original_question, seed, state, stopping_strings
         t1 = time.time()
         original_tokens = len(original_input_ids[0])
         new_tokens = len(output) - (original_tokens if not shared.is_seq2seq else 0)
-        print(f'AK Output generated in {(t1-t0):.2f} seconds ({new_tokens/(t1-t0):.2f} tokens/s, {new_tokens} tokens, context {original_tokens}, seed {seed})')
+        duration = t1 - t0
+        rate = new_tokens / duration
+        print(f'AK Output generated in {duration:.2f} seconds ({rate:.2f} tokens/s, {new_tokens} tokens, context {original_tokens}, seed {seed})')
+        metrics["duration"] = f"{duration:.3f} s"
+        metrics["rate"] = f"{rate:.3f} t/s"
+        metrics["tokens"] = new_tokens
+        metrics["original_tokens"] = original_tokens
+        metrics["seed"] = seed
         return
 
 
-def generate_reply_custom(question, original_question, seed, state, stopping_strings=None, is_chat=False):
+def generate_reply_custom(question, original_question, seed, state, stopping_strings=None, is_chat=False, metrics={}):
     """
     For models that do not use the transformers library for sampling
     """
