@@ -335,7 +335,8 @@ def chatbot_wrapper(text, state, regenerate=False, _continue=False, loading_mess
             if is_stream:
                 yield output
 
-    output['visible'][-1][1] = apply_extensions('output', output['visible'][-1][1], state, is_chat=True) + f"<br/> metrics={metrics}"
+    output['visible'][-1][1] = (apply_extensions('output', output['visible'][-1][1], state, is_chat=True)
+                                + f'<div class="metrics"/>metrics={metrics}</div>')
     yield output
 
 

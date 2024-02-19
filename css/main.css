@@ -375,6 +375,11 @@ div.svelte-362y77>*, div.svelte-362y77>.form>* {
     list-style-position: outside;
 }
 
+.metrics {
+    font-style: monospace;
+    font-size: smaller;
+}
+
 .chat .message-body ul, .chat .message-body ol {
     padding-inline-start: 2em;
 }
