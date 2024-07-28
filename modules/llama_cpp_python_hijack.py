@@ -1,21 +1,52 @@
+import importlib
+import platform
 from typing import Sequence
 
 from tqdm import tqdm
 
-try:
-    import llama_cpp
-except:
-    llama_cpp = None
+from modules import shared
+from modules.cache_utils import process_llamacpp_cache
 
-try:
-    import llama_cpp_cuda
-except:
-    llama_cpp_cuda = None
 
-try:
-    import llama_cpp_cuda_tensorcores
-except:
-    llama_cpp_cuda_tensorcores = None
+imported_module = None
+
+
+def llama_cpp_lib():
+    global imported_module
+
+    # Determine the platform
+    is_macos = platform.system() == 'Darwin'
+
+    # Define the library names based on the platform
+    if is_macos:
+        lib_names = [
+            (None, 'llama_cpp')
+        ]
+    else:
+        lib_names = [
+            ('cpu', 'llama_cpp'),
+            ('tensorcores', 'llama_cpp_cuda_tensorcores'),
+            (None, 'llama_cpp_cuda'),
+            (None, 'llama_cpp')
+        ]
+
+    for arg, lib_name in lib_names:
+        should_import = (arg is None or getattr(shared.args, arg))
+
+        if should_import:
+            if imported_module and imported_module != lib_name:
+                # Conflict detected, raise an exception
+                raise Exception(f"Cannot import `{lib_name}` because `{imported_module}` is already imported. Switching to a different version of llama-cpp-python currently requires a server restart.")
+
+            try:
+                return_lib = importlib.import_module(lib_name)
+                imported_module = lib_name
+                monkey_patch_llama_cpp_python(return_lib)
+                return return_lib
+            except ImportError:
+                continue
+
+    return None
 
 
 def eval_with_progress(self, tokens: Sequence[int]):
@@ -36,7 +67,7 @@ def eval_with_progress(self, tokens: Sequence[int]):
         progress_bar = range(0, len(tokens), self.n_batch)
 
     for i in progress_bar:
-        batch = tokens[i: min(len(tokens), i + self.n_batch)]
+        batch = tokens[i : min(len(tokens), i + self.n_batch)]
         n_past = self.n_tokens
         n_tokens = len(batch)
         self._batch.set_batch(
@@ -44,20 +75,41 @@ def eval_with_progress(self, tokens: Sequence[int]):
         )
         self._ctx.decode(self._batch)
         # Save tokens
-        self.input_ids[n_past: n_past + n_tokens] = batch
+        self.input_ids[n_past : n_past + n_tokens] = batch
         # Save logits
-        rows = n_tokens
-        cols = self._n_vocab
-        offset = (
-            0 if self.context_params.logits_all else n_tokens - 1
-        )  # NOTE: Only save the last token logits if logits_all is False
-        self.scores[n_past + offset: n_past + n_tokens, :].reshape(-1)[
-            :
-        ] = self._ctx.get_logits()[offset * cols: rows * cols]
+        if self.context_params.logits_all:
+            rows = n_tokens
+            cols = self._n_vocab
+            logits = self._ctx.get_logits()[: rows * cols]
+            self.scores[n_past : n_past + n_tokens, :].reshape(-1)[: :] = logits
+        else:
+            rows = 1
+            cols = self._n_vocab
+            logits = self._ctx.get_logits()[: rows * cols]
+            self.scores[n_past + n_tokens - 1, :].reshape(-1)[: :] = logits
         # Update n_tokens
         self.n_tokens += n_tokens
 
 
-for lib in [llama_cpp, llama_cpp_cuda, llama_cpp_cuda_tensorcores]:
-    if lib is not None:
-        lib.Llama.eval = eval_with_progress
+def monkey_patch_llama_cpp_python(lib):
+    if getattr(lib.Llama, '_is_patched', False):
+        # If the patch is already applied, do nothing
+        return
+
+    def my_generate(self, *args, **kwargs):
+        if shared.args.streaming_llm:
+            new_sequence = args[0]
+            past_sequence = self._input_ids
+
+            # Do the cache trimming for StreamingLLM
+            process_llamacpp_cache(self, new_sequence, past_sequence)
+
+        for output in self.original_generate(*args, **kwargs):
+            yield output
+
+    lib.Llama.eval = eval_with_progress
+    lib.Llama.original_generate = lib.Llama.generate
+    lib.Llama.generate = my_generate
+
+    # Set the flag to indicate that the patch has been applied
+    lib.Llama._is_patched = True
